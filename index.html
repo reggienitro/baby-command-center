@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0b0a13">
+<title>Baby Command Center</title>
+<style>
+  /* ============ TOKENS ============ */
+  :root{
+    --bg:#0b0a13;
+    --bg-soft:#121020;
+    --surface:#171428;
+    --surface-2:#1e1a33;
+    --line:#2a2545;
+    --ink:#ece9f8;
+    --ink-dim:#a49ec4;
+    --ink-faint:#6f6a8e;
+    --accent:#8b7ff5;
+    --accent-soft:#c4b8ff;
+    --accent-deep:#5a4fd1;
+    --glow:rgba(139,127,245,.16);
+    --good:#7fd8a8;
+    --good-bg:rgba(127,216,168,.10);
+    --warn:#f5c97f;
+    --warn-bg:rgba(245,201,127,.10);
+    --red:#ff9b9b;
+    --red-bg:rgba(255,120,120,.10);
+    --red-line:rgba(255,120,120,.35);
+    --radius:18px;
+    --serif:"New York", ui-serif, Georgia, "Times New Roman", serif;
+    --sans:ui-rounded, -apple-system, "SF Pro Rounded", "Segoe UI", system-ui, sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:16px;
+    line-height:1.55;
+    min-height:100dvh;
+    padding-bottom:calc(96px + env(safe-area-inset-bottom));
+    background-image:
+      radial-gradient(1200px 500px at 50% -100px, rgba(90,79,209,.18), transparent 70%),
+      radial-gradient(800px 400px at 100% 30%, rgba(139,127,245,.06), transparent 70%);
+    background-attachment:fixed;
+  }
+  /* subtle star grain */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.5;
+    background-image:
+      radial-gradient(1.2px 1.2px at 12% 18%, rgba(196,184,255,.35), transparent 100%),
+      radial-gradient(1px 1px at 78% 8%, rgba(196,184,255,.28), transparent 100%),
+      radial-gradient(1.4px 1.4px at 55% 32%, rgba(196,184,255,.20), transparent 100%),
+      radial-gradient(1px 1px at 30% 60%, rgba(196,184,255,.15), transparent 100%),
+      radial-gradient(1.2px 1.2px at 90% 70%, rgba(196,184,255,.18), transparent 100%);
+  }
+  .wrap{position:relative;z-index:1;max-width:680px;margin:0 auto;padding:0 18px}
+
+  /* ============ HEADER / COUNTDOWN ============ */
+  header{
+    padding:calc(18px + env(safe-area-inset-top)) 0 10px;
+    text-align:center;
+  }
+  .eyebrow{
+    font-size:12px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--accent-soft);opacity:.85;
+  }
+  h1.app-title{
+    font-family:var(--serif);font-weight:600;font-size:30px;letter-spacing:.01em;
+    margin:4px 0 14px;
+  }
+  .countdown{
+    display:flex;justify-content:center;gap:10px;margin-bottom:6px;
+  }
+  .cd-cell{
+    background:linear-gradient(180deg,var(--surface-2),var(--surface));
+    border:1px solid var(--line);border-radius:14px;
+    min-width:74px;padding:10px 8px 8px;
+    box-shadow:0 8px 24px -12px var(--glow);
+  }
+  .cd-num{font-family:var(--serif);font-size:30px;font-weight:600;line-height:1;color:var(--accent-soft)}
+  .cd-lab{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin-top:5px}
+  .cd-sub{font-size:13.5px;color:var(--ink-dim);margin-top:8px}
+  .cd-sub strong{color:var(--ink)}
+  .arrived{font-family:var(--serif);font-size:22px;color:var(--accent-soft);padding:8px 0}
+
+  /* ============ TABS ============ */
+  nav.tabs{
+    position:fixed;bottom:0;left:0;right:0;z-index:50;
+    background:rgba(13,11,22,.92);
+    -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
+    border-top:1px solid var(--line);
+    padding:8px 14px calc(10px + env(safe-area-inset-bottom));
+    display:flex;gap:8px;max-width:680px;margin:0 auto;
+  }
+  @media(min-width:680px){nav.tabs{border-left:1px solid var(--line);border-right:1px solid var(--line);border-radius:18px 18px 0 0}}
+  .tab-btn{
+    flex:1;border:1px solid transparent;background:transparent;color:var(--ink-faint);
+    font-family:var(--sans);font-size:14px;font-weight:600;letter-spacing:.02em;
+    border-radius:14px;padding:12px 4px;min-height:56px;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    transition:color .2s, background .2s;
+  }
+  .tab-btn .ico{font-size:19px;line-height:1}
+  .tab-btn.active{
+    color:var(--accent-soft);
+    background:linear-gradient(180deg, rgba(139,127,245,.16), rgba(139,127,245,.06));
+    border-color:rgba(139,127,245,.35);
+  }
+  main section.mode{display:none;animation:fadeUp .35s ease both}
+  main section.mode.active{display:block}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @media(prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important}
+    html{scroll-behavior:auto}
+  }
+
+  /* ============ CARDS ============ */
+  .card{
+    background:linear-gradient(180deg,var(--surface-2),var(--surface));
+    border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px;margin:14px 0;
+    box-shadow:0 14px 40px -24px rgba(0,0,0,.8);
+  }
+  .card h2{
+    font-family:var(--serif);font-weight:600;font-size:21px;letter-spacing:.01em;
+    margin-bottom:4px;color:var(--ink);
+  }
+  .card h3{font-size:14px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-soft);margin:16px 0 8px}
+  .card .sub{color:var(--ink-dim);font-size:14px;margin-bottom:8px}
+  .card p{color:var(--ink-dim);font-size:14.5px;margin:8px 0}
+  .card p strong{color:var(--ink)}
+  .card ul.plain{list-style:none}
+  .card ul.plain li{
+    color:var(--ink-dim);font-size:14.5px;padding:7px 0 7px 22px;position:relative;
+    border-bottom:1px dashed rgba(42,37,69,.6);
+  }
+  .card ul.plain li:last-child{border-bottom:none}
+  .card ul.plain li::before{content:"·";position:absolute;left:6px;color:var(--accent);font-weight:700;font-size:18px;line-height:1.2}
+  .card ul.plain li strong{color:var(--ink)}
+
+  /* red flag callouts */
+  .redflag{
+    background:var(--red-bg);border:1px solid var(--red-line);border-radius:14px;
+    padding:14px 14px 12px;margin:12px 0;
+  }
+  .redflag .rf-title{
+    color:var(--red);font-weight:700;font-size:13px;letter-spacing:.12em;text-transform:uppercase;
+    display:flex;align-items:center;gap:7px;margin-bottom:6px;
+  }
+  .redflag ul{list-style:none}
+  .redflag li{color:#f3d9d9;font-size:14.5px;padding:5px 0 5px 18px;position:relative}
+  .redflag li::before{content:"—";position:absolute;left:0;color:var(--red)}
+  .redflag li strong{color:#fff}
+  .notebox{
+    background:var(--good-bg);border:1px solid rgba(127,216,168,.3);border-radius:14px;
+    padding:13px 14px;margin:12px 0;color:#d4eee0;font-size:14.5px;
+  }
+  .notebox strong{color:var(--good)}
+  .warnbox{
+    background:var(--warn-bg);border:1px solid rgba(245,201,127,.3);border-radius:14px;
+    padding:13px 14px;margin:12px 0;color:#f0e3c8;font-size:14.5px;
+  }
+  .warnbox strong{color:var(--warn)}
+
+  /* ============ CHECKLISTS ============ */
+  .clist{list-style:none}
+  .citem{
+    display:flex;align-items:flex-start;gap:12px;
+    padding:11px 4px;border-bottom:1px dashed rgba(42,37,69,.6);
+    min-height:48px;
+  }
+  .citem:last-child{border-bottom:none}
+  .cbox{
+    flex:none;width:26px;height:26px;margin-top:1px;
+    border-radius:9px;border:1.5px solid var(--accent-deep);
+    background:transparent;cursor:pointer;position:relative;
+    transition:background .15s,border-color .15s;
+    appearance:none;-webkit-appearance:none;
+  }
+  .cbox:checked{background:var(--accent);border-color:var(--accent)}
+  .cbox:checked::after{
+    content:"";position:absolute;left:8px;top:3.5px;width:6px;height:12px;
+    border:solid #0b0a13;border-width:0 2.5px 2.5px 0;transform:rotate(42deg);
+  }
+  .clabel{flex:1;font-size:15px;color:var(--ink);cursor:pointer;padding-top:2px}
+  .clabel small{display:block;color:var(--ink-faint);font-size:12.5px;margin-top:1px}
+  .citem.done .clabel{color:var(--ink-faint);text-decoration:line-through;text-decoration-color:rgba(139,127,245,.5)}
+  .citem .del{
+    flex:none;border:none;background:transparent;color:var(--ink-faint);
+    font-size:18px;width:36px;height:36px;border-radius:10px;cursor:pointer;
+  }
+  .citem .del:active{background:var(--red-bg);color:var(--red)}
+
+  .addrow{display:flex;gap:8px;margin-top:10px}
+  .addrow input{
+    flex:1;background:var(--bg-soft);border:1px solid var(--line);border-radius:12px;
+    color:var(--ink);font-family:var(--sans);font-size:15px;padding:12px 14px;min-height:48px;
+    outline:none;
+  }
+  .addrow input::placeholder{color:var(--ink-faint)}
+  .addrow input:focus{border-color:var(--accent-deep)}
+  .addrow button{
+    flex:none;background:var(--accent-deep);border:none;color:#fff;font-weight:700;
+    font-family:var(--sans);font-size:14px;border-radius:12px;padding:0 18px;min-height:48px;cursor:pointer;
+  }
+  .addrow button:active{background:var(--accent)}
+
+  /* progress pill */
+  .prog{
+    display:inline-flex;align-items:center;gap:7px;
+    font-size:12px;font-weight:700;color:var(--accent-soft);
+    background:rgba(139,127,245,.12);border:1px solid rgba(139,127,245,.25);
+    border-radius:999px;padding:4px 11px;margin-left:8px;vertical-align:2px;
+  }
+
+  /* ============ WEEK ACCORDION ============ */
+  details.week{
+    background:linear-gradient(180deg,var(--surface-2),var(--surface));
+    border:1px solid var(--line);border-radius:var(--radius);
+    margin:10px 0;overflow:hidden;
+  }
+  details.week summary{
+    list-style:none;cursor:pointer;padding:16px 18px;
+    display:flex;align-items:center;gap:12px;min-height:60px;
+  }
+  details.week summary::-webkit-details-marker{display:none}
+  .wk-badge{
+    flex:none;font-family:var(--serif);font-weight:600;font-size:15px;
+    width:52px;height:52px;border-radius:16px;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;line-height:1.05;
+    background:rgba(139,127,245,.1);border:1px solid rgba(139,127,245,.3);color:var(--accent-soft);
+  }
+  .wk-badge span{font-size:9.5px;font-family:var(--sans);letter-spacing:.12em;text-transform:uppercase;opacity:.8;font-weight:700}
+  .wk-meta{flex:1}
+  .wk-title{font-weight:700;font-size:15.5px}
+  .wk-sub{font-size:12.5px;color:var(--ink-faint);margin-top:2px}
+  .wk-chev{flex:none;color:var(--ink-faint);transition:transform .25s;font-size:13px}
+  details[open] .wk-chev{transform:rotate(90deg)}
+  details.week .wk-body{padding:0 18px 16px;border-top:1px solid var(--line)}
+  details.week.current{border-color:rgba(139,127,245,.55);box-shadow:0 0 0 1px rgba(139,127,245,.25), 0 12px 36px -18px var(--glow)}
+  details.week.past .wk-badge{opacity:.55}
+  .now-chip{
+    flex:none;font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+    background:var(--accent);color:#0b0a13;border-radius:999px;padding:4px 9px;
+  }
+
+  /* ============ TODAY PANEL ============ */
+  .today-card{
+    border-color:rgba(139,127,245,.5);
+    background:
+      radial-gradient(400px 160px at 20% 0%, rgba(139,127,245,.14), transparent 70%),
+      linear-gradient(180deg,var(--surface-2),var(--surface));
+  }
+  .today-empty{color:var(--good);font-size:14.5px;padding:8px 0}
+
+  /* ============ CONTRACTION TIMER ============ */
+  .ctimer{text-align:center;padding:6px 0 2px}
+  .ct-btn{
+    width:178px;height:178px;border-radius:50%;border:2px solid rgba(139,127,245,.5);
+    background:radial-gradient(circle at 50% 35%, rgba(139,127,245,.25), rgba(90,79,209,.12) 70%);
+    color:var(--ink);font-family:var(--sans);cursor:pointer;
+    display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+    box-shadow:0 0 50px -10px var(--glow);
+    transition:transform .12s;
+  }
+  .ct-btn:active{transform:scale(.97)}
+  .ct-btn .big{font-family:var(--serif);font-size:34px;font-weight:600;line-height:1;color:var(--accent-soft)}
+  .ct-btn .lab{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-dim);font-weight:700}
+  .ct-btn.running{
+    border-color:var(--red-line);
+    background:radial-gradient(circle at 50% 35%, rgba(255,120,120,.22), rgba(255,120,120,.07) 70%);
+    animation:pulse 2.4s ease-in-out infinite;
+  }
+  .ct-btn.running .big{color:var(--red)}
+  @keyframes pulse{0%,100%{box-shadow:0 0 40px -12px rgba(255,120,120,.4)}50%{box-shadow:0 0 60px -8px rgba(255,120,120,.6)}}
+  .ct-stats{display:flex;gap:8px;margin-top:16px}
+  .ct-stat{
+    flex:1;background:var(--bg-soft);border:1px solid var(--line);border-radius:14px;padding:10px 6px;
+  }
+  .ct-stat .v{font-family:var(--serif);font-size:19px;font-weight:600;color:var(--accent-soft)}
+  .ct-stat .k{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-top:3px;font-weight:700}
+  .ct-511{margin-top:12px;font-size:13.5px;border-radius:12px;padding:10px 12px}
+  .ct-511.calm{background:var(--good-bg);color:#d4eee0}
+  .ct-511.close{background:var(--warn-bg);color:#f0e3c8}
+  .ct-511.go{background:var(--red-bg);color:#f3d9d9;border:1px solid var(--red-line);font-weight:700}
+  table.ct-log{width:100%;border-collapse:collapse;margin-top:14px;font-size:13.5px}
+  table.ct-log th{
+    text-align:left;color:var(--ink-faint);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+    padding:6px 4px;border-bottom:1px solid var(--line);
+  }
+  table.ct-log td{padding:9px 4px;border-bottom:1px dashed rgba(42,37,69,.6);color:var(--ink-dim)}
+  table.ct-log td:first-child{color:var(--ink)}
+  .ghostbtn{
+    background:transparent;border:1px solid var(--line);color:var(--ink-dim);
+    font-family:var(--sans);font-size:13px;font-weight:600;border-radius:11px;
+    padding:10px 16px;min-height:44px;cursor:pointer;margin-top:12px;
+  }
+  .ghostbtn:active{border-color:var(--red-line);color:var(--red)}
+
+  /* ============ BABY LOG ============ */
+  .logbtns{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:10px 0 4px}
+  .logbtn{
+    border:1px solid var(--line);border-radius:14px;background:var(--bg-soft);
+    color:var(--ink);font-family:var(--sans);font-size:14px;font-weight:700;
+    padding:14px 6px;min-height:58px;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    transition:border-color .15s;
+  }
+  .logbtn .ico{font-size:20px}
+  .logbtn small{font-weight:600;color:var(--ink-faint);font-size:11px}
+  .logbtn:active{border-color:var(--accent);background:rgba(139,127,245,.1)}
+  .logbtn.sleeping{border-color:var(--accent);background:rgba(139,127,245,.14);color:var(--accent-soft)}
+  .day-summary{display:flex;gap:8px;margin-top:12px}
+  .day-summary .ct-stat .v{font-size:17px}
+  ul.loglist{list-style:none;margin-top:12px}
+  ul.loglist li{
+    display:flex;align-items:center;gap:10px;
+    padding:9px 2px;border-bottom:1px dashed rgba(42,37,69,.6);font-size:14px;color:var(--ink-dim);
+  }
+  ul.loglist li .t{flex:none;color:var(--ink-faint);font-size:12.5px;width:62px}
+  ul.loglist li .what{flex:1;color:var(--ink)}
+  ul.loglist li .what small{color:var(--ink-faint)}
+
+  /* tables */
+  table.ref{width:100%;border-collapse:collapse;font-size:13.5px;margin:8px 0}
+  table.ref th{
+    text-align:left;color:var(--accent-soft);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+    padding:7px 6px;border-bottom:1px solid var(--line);
+  }
+  table.ref td{padding:8px 6px;border-bottom:1px dashed rgba(42,37,69,.6);color:var(--ink-dim);vertical-align:top}
+  table.ref td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
+  table.ref tr:last-child td{border-bottom:none}
+
+  .section-head{
+    font-family:var(--serif);font-size:17px;font-weight:600;color:var(--accent-soft);
+    margin:24px 2px 2px;display:flex;align-items:center;gap:8px;
+  }
+  .section-head::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+  footer{
+    text-align:center;color:var(--ink-faint);font-size:12px;padding:30px 20px 10px;line-height:1.7;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">She arrives soon</div>
+    <h1 class="app-title">Baby Command Center</h1>
+    <div id="countdown"></div>
+  </header>
+
+  <main>
+    <!-- ================================================================ -->
+    <!-- MODE 1 · BEFORE -->
+    <!-- ================================================================ -->
+    <section class="mode" id="mode-before">
+
+      <div class="card today-card">
+        <h2>Today</h2>
+        <p class="sub" id="today-sub"></p>
+        <ul class="clist" id="today-list"></ul>
+        <div class="today-empty" id="today-empty" hidden>✓ Nothing urgent — you're caught up. Rest counts as prep too.</div>
+      </div>
+
+      <div class="section-head">Week-by-week prep track</div>
+      <div id="weeks"></div>
+
+      <div class="section-head">Hospital go-bag</div>
+      <div class="card">
+        <h2>Pack the bag <span class="prog" id="prog-gobag"></span></h2>
+        <p class="sub">Aim to have it by the door around week 35–36. Car seat lives in the car, not the bag.</p>
+        <h3>For mom</h3>
+        <ul class="clist" data-list="bag-mom"></ul>
+        <div class="addrow" data-add="bag-mom"><input type="text" placeholder="Add item for mom…"><button>Add</button></div>
+        <h3>For baby</h3>
+        <ul class="clist" data-list="bag-baby"></ul>
+        <div class="addrow" data-add="bag-baby"><input type="text" placeholder="Add item for baby…"><button>Add</button></div>
+        <h3>For you (partner)</h3>
+        <ul class="clist" data-list="bag-partner"></ul>
+        <div class="addrow" data-add="bag-partner"><input type="text" placeholder="Add item for you…"><button>Add</button></div>
+      </div>
+
+      <div class="section-head">When to leave for the hospital</div>
+      <div class="card">
+        <h2>Know the signs</h2>
+        <h3>Early labor (usually OK to stay home)</h3>
+        <ul class="plain">
+          <li>Irregular contractions that come and go, more than 5–7 minutes apart</li>
+          <li>Mild cramping, low backache, "lightening" (baby drops)</li>
+          <li>Losing the mucus plug / bloody show (pink-tinged) — labor may still be days away</li>
+          <li>What to do: rest, eat light, hydrate, walk, time a few contractions, try to sleep</li>
+        </ul>
+        <h3>How to time contractions</h3>
+        <p><strong>Frequency</strong> = start of one contraction to the start of the next. <strong>Duration</strong> = start to end of a single contraction. Use the timer on the Hospital tab — it does the math for you.</p>
+        <h3>The 5-1-1 rule</h3>
+        <p>Contractions every <strong>5 minutes</strong>, lasting <strong>1 full minute</strong>, for <strong>1 hour straight</strong> — call your OB and head in. First babies usually take their time, but always follow your own provider's instructions if they've given you different numbers.</p>
+        <h3>Call your OB right away if</h3>
+        <ul class="plain">
+          <li><strong>Water breaks</strong> — note the time, color, and amount. Greenish/brown fluid: say so, it matters.</li>
+          <li>Regular contractions <strong>before 37 weeks</strong></li>
+          <li>Bleeding more than light spotting</li>
+          <li>Baby is moving noticeably <strong>less</strong> than usual</li>
+          <li>Fever, severe headache, vision changes, or sudden swelling of face/hands</li>
+        </ul>
+        <div class="redflag">
+          <div class="rf-title">⚠ Go now / call 911</div>
+          <ul>
+            <li><strong>Heavy bleeding</strong> (like a period or more)</li>
+            <li><strong>Severe, constant</strong> abdominal pain that doesn't ease between contractions</li>
+            <li>An overwhelming <strong>urge to push</strong>, or you can feel the baby coming</li>
+            <li>Something feels like it's in the vagina (possible cord) — get her on hands and knees, chest down, call 911</li>
+            <li>Seizure, fainting, or trouble breathing</li>
+          </ul>
+        </div>
+        <div class="notebox"><strong>Logistics now, calm later:</strong> know your route + a backup route, where to park, and which entrance to use after hours. Keep the gas tank above half from week 36 on.</div>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- MODE 2 · HOSPITAL -->
+    <!-- ================================================================ -->
+    <section class="mode" id="mode-hospital">
+
+      <div class="card">
+        <h2>Contraction timer</h2>
+        <p class="sub">Tap when a contraction <strong>starts</strong>, tap again when it <strong>ends</strong>. Interval = start-to-start.</p>
+        <div class="ctimer">
+          <button class="ct-btn" id="ct-btn">
+            <span class="big" id="ct-time">Start</span>
+            <span class="lab" id="ct-lab">tap when one begins</span>
+          </button>
+          <div class="ct-stats">
+            <div class="ct-stat"><div class="v" id="ct-avg-dur">—</div><div class="k">avg length</div></div>
+            <div class="ct-stat"><div class="v" id="ct-avg-int">—</div><div class="k">avg apart</div></div>
+            <div class="ct-stat"><div class="v" id="ct-count">0</div><div class="k">last hour</div></div>
+          </div>
+          <div class="ct-511" id="ct-511" hidden></div>
+          <table class="ct-log" id="ct-table" hidden>
+            <thead><tr><th>Started</th><th>Length</th><th>Apart</th></tr></thead>
+            <tbody id="ct-rows"></tbody>
+          </table>
+          <button class="ghostbtn" id="ct-clear" hidden>Clear log</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>What to bring</h2>
+        <p class="sub">The full go-bag checklist lives on the Before tab. Last-minute grabs on the way out the door:</p>
+        <ul class="clist" data-list="hosp-grab"></ul>
+        <div class="addrow" data-add="hosp-grab"><input type="text" placeholder="Add a last-minute item…"><button>Add</button></div>
+      </div>
+
+      <div class="card">
+        <h2>What to expect, stage by stage</h2>
+        <h3>1 · Triage / check-in</h3>
+        <p>Monitoring belts, a cervical check, lots of questions. If it's early, being sent home to labor more is <strong>normal</strong>, not a failure.</p>
+        <h3>2 · Early labor (0–6 cm)</h3>
+        <p>Often many hours, especially with a first baby. Walk the halls, hydrate, rest between waves. Your job: snacks, water, counter-pressure on her low back, calm voice.</p>
+        <h3>3 · Active labor (6–10 cm)</h3>
+        <p>Contractions get stronger and closer (every 3–5 min). This is the usual window for an epidural if she wants one — ask early, anesthesia can take time to arrive. Transition (8–10 cm) is the most intense part and often the shortest. If she says she can't do it, she's usually almost done.</p>
+        <h3>4 · Pushing &amp; delivery</h3>
+        <p>Anywhere from 20 minutes to 3+ hours for a first baby. Nurses coach the timing. Your job: hold a leg if asked, stay at her head if not, keep telling her she's doing it.</p>
+        <h3>5 · The golden hour</h3>
+        <p>Right after birth: skin-to-skin on mom's chest, delayed cord clamping (you may be offered the cut), first latch attempt. Routine checks can usually happen ON mom — you can ask for that.</p>
+        <h3>6 · Recovery (24–48h vaginal, ~72–96h C-section)</h3>
+        <p>Baby gets a hearing screen, heel-prick blood test, bilirubin (jaundice) check, vitamin K shot, and eye ointment. <strong>Ask for the lactation consultant</strong> — more than once if needed. Nurses will check on mom often; let them, and let her sleep when she can.</p>
+      </div>
+
+      <div class="card">
+        <h2>Questions for the care team <span class="prog" id="prog-questions"></span></h2>
+        <p class="sub">Check them off as you get answers.</p>
+        <ul class="clist" data-list="hosp-questions"></ul>
+        <div class="addrow" data-add="hosp-questions"><input type="text" placeholder="Add your own question…"><button>Add</button></div>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- MODE 3 · AFTER -->
+    <!-- ================================================================ -->
+    <section class="mode" id="mode-after">
+
+      <div class="card">
+        <h2>Feeding · Diapers · Sleep log</h2>
+        <p class="sub">One tap to log. Stays on this phone.</p>
+        <div class="logbtns">
+          <button class="logbtn" data-log="feed-left"><span class="ico">🤱</span>Nursed · Left<small>breast</small></button>
+          <button class="logbtn" data-log="feed-right"><span class="ico">🤱</span>Nursed · Right<small>breast</small></button>
+          <button class="logbtn" data-log="feed-bottle"><span class="ico">🍼</span>Bottle<small>breast milk or formula</small></button>
+          <button class="logbtn" data-log="sleep" id="sleep-btn"><span class="ico">😴</span><span id="sleep-lab">Sleep start</span><small id="sleep-sub">tap when she falls asleep</small></button>
+          <button class="logbtn" data-log="diaper-wet"><span class="ico">💧</span>Wet diaper<small>&nbsp;</small></button>
+          <button class="logbtn" data-log="diaper-dirty"><span class="ico">💩</span>Dirty diaper<small>&nbsp;</small></button>
+        </div>
+        <div class="day-summary">
+          <div class="ct-stat"><div class="v" id="sum-feeds">0</div><div class="k">feeds today</div></div>
+          <div class="ct-stat"><div class="v" id="sum-wet">0</div><div class="k">wet today</div></div>
+          <div class="ct-stat"><div class="v" id="sum-dirty">0</div><div class="k">dirty today</div></div>
+          <div class="ct-stat"><div class="v" id="sum-sleep">—</div><div class="k">sleep today</div></div>
+        </div>
+        <ul class="loglist" id="baby-log"></ul>
+        <button class="ghostbtn" id="log-clear" hidden>Clear log</button>
+      </div>
+
+      <div class="card">
+        <h2>Feeding her</h2>
+        <h3>How often</h3>
+        <p>Newborns eat <strong>8–12 times per 24 hours</strong> — roughly every 2–3 hours, sometimes in clusters (especially evenings — normal). In the first days, wake her to feed if it's been <strong>~3–4 hours</strong>, until she's back to birth weight and your pediatrician says feeding on demand is fine.</p>
+        <h3>Hunger cues (feed at the early ones)</h3>
+        <ul class="plain">
+          <li><strong>Early:</strong> stirring, mouth opening, turning her head and rooting (searching with her mouth)</li>
+          <li><strong>Active:</strong> stretching, more movement, hand to mouth, sucking on fists</li>
+          <li><strong>Late:</strong> crying — a worked-up baby latches worse. Calm her first (skin-to-skin), then feed.</li>
+        </ul>
+        <h3>Breastfeeding basics</h3>
+        <ul class="plain">
+          <li>First milk (colostrum) comes in tiny amounts — that's exactly what she needs. Mature milk arrives around day 2–5.</li>
+          <li>A good latch takes in more than the nipple — a big mouthful of breast. Persistent pain = ask for help, don't push through.</li>
+          <li>Offer both sides; next feed, start on the side you ended on.</li>
+          <li>Lactation consultants exist for exactly this. Use them early and often — it's a learned skill for both of them, not an instinct.</li>
+        </ul>
+        <h3>Bottle basics</h3>
+        <ul class="plain">
+          <li>A newborn stomach is tiny: <strong>~1–2 oz (30–60 ml) per feed</strong> in the early days, growing gradually. Follow her cues over the clock.</li>
+          <li><strong>Paced feeding:</strong> hold her semi-upright, bottle near-horizontal, let her pause. Don't push her to finish.</li>
+          <li>If using formula: prepare it <strong>exactly</strong> per the label — never dilute or concentrate it.</li>
+          <li>Wash bottle parts thoroughly per the instructions. Fed is the goal, however she's fed.</li>
+        </ul>
+        <h3>How you know she's getting enough</h3>
+        <ul class="plain">
+          <li><strong>Diaper counts on track</strong> (table below) — the single best at-home signal</li>
+          <li>You can hear/see swallowing during feeds; she seems settled after most feeds</li>
+          <li>Weight: losing up to ~7–10% after birth is common; back to birth weight by ~10–14 days. The pediatrician tracks this — you don't need a scale at home.</li>
+        </ul>
+        <div class="warnbox"><strong>Ask the pediatrician about vitamin D drops</strong> if she's breastfed or partly breastfed — recommended for most breastfed babies, but get the product and amount from your doctor, not the internet.</div>
+      </div>
+
+      <div class="card">
+        <h2>Diaper counts by day</h2>
+        <p class="sub">Rough minimums — more is fine. Day 1 = first 24 hours.</p>
+        <table class="ref">
+          <thead><tr><th>Day</th><th>Wet (pee)</th><th>Dirty (poop)</th></tr></thead>
+          <tbody>
+            <tr><td>Day 1</td><td>1+</td><td>1+ — black, tarry (meconium — normal!)</td></tr>
+            <tr><td>Day 2</td><td>2+</td><td>1–2 — dark green-black</td></tr>
+            <tr><td>Day 3</td><td>3+</td><td>2–3 — turning greenish-brown</td></tr>
+            <tr><td>Day 4</td><td>4+</td><td>3+ — getting yellow, looser</td></tr>
+            <tr><td>Day 5+</td><td>6+ heavy</td><td>3–4+ yellow &amp; seedy (breastfed; formula-fed may go less often)</td></tr>
+          </tbody>
+        </table>
+        <p>Brick-red/orange dust in the diaper in the first couple of days ("urate crystals") can be normal — mention it at the first visit. If it shows up after day 4, it can mean she needs more milk — call.</p>
+        <div class="redflag">
+          <div class="rf-title">⚠ Call your pediatrician if</div>
+          <ul>
+            <li>Fewer wet diapers than days old (first week), or <strong>no wet diaper in 8+ hours</strong></li>
+            <li>No stool in 48+ hours in the first week</li>
+            <li><strong>White / pale-gray stool</strong>, or stool with blood (more than a streak)</li>
+            <li>Dry mouth, no tears when crying, sunken soft spot, unusually sleepy — possible dehydration</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Safe sleep (the ABC rule)</h2>
+        <p><strong>Alone · on her Back · in a bare Crib</strong> — every sleep, naps included.</p>
+        <ul class="plain">
+          <li><strong>Back to sleep, every time</strong>, until she can roll both ways on her own</li>
+          <li>Firm, flat surface — crib, bassinet, or play yard that meets current safety standards</li>
+          <li><strong>Nothing in the sleep space:</strong> no blankets, pillows, bumpers, stuffed animals, or positioners</li>
+          <li>Sleep sack or swaddle instead of blankets — stop swaddling at the <strong>first sign of rolling</strong> (often by ~8 weeks, earlier than you'd think)</li>
+          <li>Room-share — her sleep surface in your room — for at least the first 6 months, but <strong>not</strong> in your bed</li>
+          <li>Don't let her overheat: about one more layer than you'd wear; no hats indoors for sleep</li>
+          <li>No sleeping in car seats, swings, or loungers outside the car — if she conks out there, move her to a flat surface when you can</li>
+          <li>A pacifier at sleep time (once feeding is going well) is protective — and fine if she refuses it</li>
+          <li>Keep her environment smoke-free, always</li>
+        </ul>
+        <div class="notebox"><strong>The 3am trap is the couch.</strong> If you're exhausted and might doze off holding her, an adult bed cleared of pillows and blankets is far less dangerous than falling asleep together on a sofa or armchair. Best of all: put her back on her own surface, even mid-protest.</div>
+      </div>
+
+      <div class="card">
+        <h2>Warning signs — when to call</h2>
+        <div class="redflag">
+          <div class="rf-title">⚠ Fever — this one is non-negotiable</div>
+          <ul>
+            <li><strong>Rectal temp of 100.4°F (38°C) or higher in a baby under 3 months = call the pediatrician immediately</strong>, any hour of the night.</li>
+            <li>Don't give fever medicine first — under 3 months, that decision and the dose belong to the doctor.</li>
+            <li>A rectal thermometer is the accurate method at this age — have one before she's home.</li>
+            <li>Low temperature matters too: below ~97.0°F (36.1°C) and hard to keep warm — call.</li>
+          </ul>
+        </div>
+        <div class="redflag">
+          <div class="rf-title">⚠ Breathing — get help now</div>
+          <ul>
+            <li>More than ~60 breaths per minute, sustained; grunting with each breath; nostrils flaring</li>
+            <li>Skin sucking in between or under the ribs with each breath (retractions)</li>
+            <li><strong>Blue lips, tongue, or face — call 911</strong></li>
+            <li>Pauses in breathing longer than ~10–15 seconds</li>
+          </ul>
+        </div>
+        <h3>Jaundice (yellowing)</h3>
+        <p>Mild yellowing of the face and eyes is common around days 2–4 and usually peaks by day 5. It gets checked before discharge and again at the first pediatrician visit. Daylight near a window is the easiest place to look — press gently on her skin and see if it looks yellow when you let go.</p>
+        <div class="redflag">
+          <div class="rf-title">⚠ Call if</div>
+          <ul>
+            <li>Yellow is spreading down to the <strong>belly, arms, or legs</strong></li>
+            <li>The whites of her eyes are deeply yellow</li>
+            <li>She's <strong>hard to wake, feeding poorly</strong>, unusually floppy, or has a high-pitched cry</li>
+            <li>Jaundice plus pale/white stools or dark urine</li>
+          </ul>
+        </div>
+        <h3>Also call the pediatrician for</h3>
+        <ul class="plain">
+          <li>Vomiting that's forceful/projectile, green, or bloody — different from normal spit-up</li>
+          <li>Refusing 2+ feeds in a row, or too sleepy to feed</li>
+          <li>Inconsolable crying for hours, or a weak/unusual cry</li>
+          <li>Umbilical cord area red, swollen, oozing, or foul-smelling</li>
+          <li>Any rash with fever, blisters, or one that worries you</li>
+          <li>Anything where your gut says "this isn't right"</li>
+        </ul>
+        <div class="notebox"><strong>Trust your gut.</strong> Pediatric offices run 24/7 nurse lines because new parents are <em>supposed</em> to call. No good doctor will ever make you feel silly for calling about a newborn. When in doubt, call — that's the whole rule.</div>
+      </div>
+
+      <div class="card">
+        <h2>Soothing her</h2>
+        <h3>The 5 S's (try them in order, stack them)</h3>
+        <ul class="plain">
+          <li><strong>Swaddle</strong> — snug at the arms, loose at the hips</li>
+          <li><strong>Side / stomach hold</strong> — in your arms only; she always <em>sleeps</em> on her back</li>
+          <li><strong>Shush</strong> — white noise about as loud as a shower, near her ear</li>
+          <li><strong>Swing</strong> — small, fast, gentle jiggles with her head supported. Never, ever shaking.</li>
+          <li><strong>Suck</strong> — pacifier or a clean fingertip</li>
+        </ul>
+        <p>Also in the toolkit: skin-to-skin on your bare chest (works for dads too — a lot), motion (walking, babywearing), a warm bath, stepping outside, or simply a fresh diaper and a feed.</p>
+        <h3>Crying: what's normal</h3>
+        <p>Crying ramps up from ~2 weeks and peaks around 6–8 weeks — including stretches where nothing works and she isn't hungry, wet, or sick. That phase is well-documented, normal, and temporary. It is not a verdict on you.</p>
+        <div class="redflag">
+          <div class="rf-title">⚠ Never shake a baby</div>
+          <ul>
+            <li>If you hit your limit: put her down <strong>on her back in her crib</strong>, walk out, close the door, and breathe for 10 minutes. A safe baby crying alone is OK. Tag in your partner or call someone. Stepping away is the strong move, not the weak one.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Umbilical cord care</h2>
+        <ul class="plain">
+          <li>Keep the stump <strong>clean and dry</strong> — air is the treatment. No alcohol rubs unless your pediatrician says otherwise.</li>
+          <li>Fold the diaper <strong>below</strong> the stump (or use newborn diapers with the cut-out notch)</li>
+          <li><strong>Sponge baths only</strong> until it falls off — usually 1–3 weeks. Then tub time begins.</li>
+          <li>Let it fall off on its own — never pull, even when it's hanging by a thread</li>
+          <li>A few drops of blood or a little crust when it detaches: normal</li>
+        </ul>
+        <div class="redflag">
+          <div class="rf-title">⚠ Call if</div>
+          <ul>
+            <li>Redness spreading on the skin <strong>around</strong> the stump</li>
+            <li>Pus, foul smell, active bleeding, or she cries when it's touched</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Good to know, week one</h2>
+        <ul class="plain">
+          <li><strong>First pediatrician visit:</strong> typically 3–5 days after birth (1–2 days after discharge). Book it before leaving the hospital.</li>
+          <li><strong>Baby girls:</strong> a little white discharge or even a tiny "mini period" of spotting in the first week is normal — mom's hormones leaving her system. Wipe gently, front to back, outside only.</li>
+          <li><strong>Swollen breasts or genitals at birth</strong> — also hormones, also normal, resolves on its own.</li>
+          <li><strong>Peeling skin, baby acne, flat pink patches ("stork bites")</strong> — normal newborn skin. No products needed.</li>
+          <li><strong>Sneezing, hiccups, and irregular breathing rhythms</strong> (fast, then slow, brief pauses under ~10 seconds) are standard newborn behavior.</li>
+          <li><strong>Nails:</strong> file or trim while she sleeps — newborn nails are sharp and she WILL scratch her face.</li>
+          <li><strong>Visitors:</strong> washed hands, no kisses on her face or hands, nobody sick, nobody smoking. You're allowed to say no — "pediatrician's orders" is a free excuse.</li>
+          <li><strong>Day/night confusion is standard issue.</strong> Bright and social by day, dark and boring at night. It recalibrates within a few weeks.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>Don't forget mom</h2>
+        <p class="sub">Her recovery is week one's other full-time patient.</p>
+        <div class="redflag">
+          <div class="rf-title">⚠ For HER — get care fast if</div>
+          <ul>
+            <li>Bleeding that <strong>soaks a pad in an hour</strong>, or clots bigger than an egg</li>
+            <li>Severe headache, vision changes, or new swelling — <strong>preeclampsia can start AFTER birth</strong></li>
+            <li>Fever of 100.4°F+, chest pain, trouble breathing, or a painful/red/swollen leg</li>
+            <li>An incision or tear that's getting more painful, red, or oozing</li>
+            <li>Thoughts of harming herself or the baby, or she just "isn't herself" beyond passing baby blues — call her OB; the 988 line is there 24/7. Postpartum depression and anxiety are common, medical, and treatable — and they can hit dads too.</li>
+          </ul>
+        </div>
+        <p>Your highest-value plays this week: own the diapers and the burping, guard her sleep in real chunks, keep water and snacks within her arm's reach, run interference on visitors, and tell her — specifically — what she's doing well.</p>
+      </div>
+
+      <footer>
+        General information for healthy, full-term newborns, aligned with AAP / ACOG guidance.<br>
+        Not medical advice — your pediatrician and OB know you and her; when they say something different, they win.<br>
+        Medication doses for babies under 3 months come from the doctor, never from a chart.
+      </footer>
+    </section>
+  </main>
+</div>
+
+<nav class="tabs">
+  <button class="tab-btn" data-tab="before"><span class="ico">🌙</span>Before</button>
+  <button class="tab-btn" data-tab="hospital"><span class="ico">🏥</span>Hospital</button>
+  <button class="tab-btn" data-tab="after"><span class="ico">👶</span>After</button>
+</nav>
+
+<script>
+"use strict";
+/* ================================================================
+   DATA
+================================================================ */
+var DUE = new Date(2026, 7, 24); // Aug 24, 2026 local time
+
+var WEEKS = [
+  {w:30, title:"Lay the groundwork", tasks:[
+    ["w30-1","Pre-register at the hospital","Most have an online form — 10 minutes now saves paperwork in triage"],
+    ["w30-2","Schedule a hospital / L&D tour","Know where to park and which entrance is open at 3am"],
+    ["w30-3","Shortlist 2–3 pediatricians","Many offer free meet-and-greets; check insurance + distance from home"],
+    ["w30-4","Book a childbirth class (if not done)","Hospital classes fill up — even a one-day intensive helps"],
+    ["w30-5","Order the car seat","You'll want time to learn it before installing"],
+  ]},
+  {w:31, title:"Gear & logistics", tasks:[
+    ["w31-1","Get the breast pump through insurance","Usually free — order via a durable medical equipment supplier"],
+    ["w31-2","Do the pediatrician meet-and-greets","Ask: call hours, same-day sick visits, who covers nights"],
+    ["w31-3","Set up the bassinet / sleep space","In your room — firm, flat, bare. Practice the setup now"],
+    ["w31-4","Start the name shortlist (if still open)","No pressure — you get to meet her first"],
+  ]},
+  {w:32, title:"Car seat week", tasks:[
+    ["w32-1","Install the car seat base","Read BOTH manuals — seat and vehicle. Rear-facing, back seat"],
+    ["w32-2","Book a car seat inspection","Free with a certified tech (CPST) — fire stations, Safe Kids events"],
+    ["w32-3","Wash newborn + 0-3mo clothes","Fragrance-free detergent; you need fewer outfits than you think"],
+    ["w32-4","Write your work-leave coverage doc","Do it now, while you're not sleep-deprived"],
+  ]},
+  {w:33, title:"Stock the nest", tasks:[
+    ["w33-1","Start freezer meals","Aim for 10–14 dinners; doubles of anything you already cook"],
+    ["w33-2","Draft birth preferences (1 page max)","Preferences, not a script — pain relief, skin-to-skin, who cuts the cord"],
+    ["w33-3","Decide on cord blood banking","Private vs public donation vs skip — decide before delivery day"],
+    ["w33-4","First pass at packing the go-bag","Use the checklist below — pack what you won't miss day-to-day"],
+  ]},
+  {w:34, title:"Lock in your people", tasks:[
+    ["w34-1","Choose THE pediatrician","The hospital will ask for a name at delivery — have it ready"],
+    ["w34-2","Confirm hospital pre-registration went through","Call and verify — forms get lost"],
+    ["w34-3","Plan pet / household care for delivery day","Who has a key? Write it down with phone numbers"],
+    ["w34-4","Line up week-one help","Who brings food, who does laundry, who is NOT invited yet"],
+  ]},
+  {w:35, title:"Bag by the door", tasks:[
+    ["w35-1","Finish packing the go-bag","Everything but daily-use items — sticky-note the chargers and toiletries"],
+    ["w35-2","Complete the car seat inspection","If not done yet, this is the week"],
+    ["w35-3","Drive the hospital route + a backup route","Time it at rush hour once; find the after-hours entrance"],
+    ["w35-4","Draft the birth announcement text list","Write the group text now; future-you will be useless"],
+  ]},
+  {w:36, title:"Final systems check", tasks:[
+    ["w36-1","Weekly OB visits start — go to them","The GBS swab happens around now; ask anything you're sitting on"],
+    ["w36-2","Review birth preferences with the OB","Make sure it's in the chart; bring 2 printed copies anyway"],
+    ["w36-3","Keep the gas tank above half","From now until birth. Non-negotiable dad rule"],
+    ["w36-4","Click the infant carrier into its base","Seat fully installed and ready in the car"],
+    ["w36-5","Stock the house","Newborn + size 1 diapers, wipes, paper goods, her postpartum supplies, easy snacks"],
+  ]},
+  {w:37, title:"Early term — she's allowed now", tasks:[
+    ["w37-1","Re-read the 'when to leave' guide together","Both of you should know 5-1-1 and the red flags cold"],
+    ["w37-2","Practice with the contraction timer","Hospital tab — learn it before you need it at 2am"],
+    ["w37-3","Confirm who's on call for pets / rides","Text them: 'any day now — keep your phone loud'"],
+    ["w37-4","Ask HR how to add baby to insurance","You usually have ~30 days after birth — know the steps now"],
+  ]},
+  {w:38, title:"Rest is productive", tasks:[
+    ["w38-1","Sleep. Dates. Naps. Movies.","Banking rest is real prep, not slacking"],
+    ["w38-2","Top off the freezer + labor snacks","Stock electrolyte drinks for the big day"],
+    ["w38-3","Charge battery packs, pack long cables","6ft+ — hospital outlets are never near the bed"],
+    ["w38-4","Ask the OB: when to call vs come in","Get HER doctor's specific numbers — they override the generic rule"],
+  ]},
+  {w:39, title:"Any day now", tasks:[
+    ["w39-1","Daily walks; phones charged & loud","Both phones, all day, no exceptions"],
+    ["w39-2","Final bag check + sticky-note items","Toiletries and chargers get grabbed on the way out"],
+    ["w39-3","Keep tracking her movements","Baby stays active right up to labor — less movement = call the OB"],
+    ["w39-4","Clear your calendar","Nothing important more than an hour from the hospital"],
+  ]},
+  {w:40, title:"Due week", tasks:[
+    ["w40-1","Stay calm — due dates are estimates","Only ~5% of babies arrive ON the due date; first babies often run late"],
+    ["w40-2","Ask the OB about the past-due plan","Monitoring schedule, and how long they're comfortable waiting"],
+    ["w40-3","Keep moving, keep resting","Walks, hydration, naps. The bag is packed. You're ready."],
+  ]},
+];
+
+var LISTS = {
+  "bag-mom":[
+    ["bm-1","Photo ID, insurance card, hospital paperwork",""],
+    ["bm-2","Birth preferences — 2 printed copies",""],
+    ["bm-3","Phone + 6ft charging cable",""],
+    ["bm-4","Robe + 2 nursing-friendly gowns or comfy clothes","Hospital gowns exist, but hers feel human"],
+    ["bm-5","Nursing bras x2 + nursing pads",""],
+    ["bm-6","Toiletries, lip balm, hair ties","Labor rooms are dry — lip balm is weirdly critical"],
+    ["bm-7","Glasses / contacts + solution",""],
+    ["bm-8","Flip-flops for the shower + warm grippy socks",""],
+    ["bm-9","Going-home outfit, loose, ~6-month-bump size","She'll still have a bump. Totally normal."],
+    ["bm-10","Her own postpartum underwear (or embrace the mesh ones — they're great)",""],
+    ["bm-11","Snacks + electrolyte drinks",""],
+    ["bm-12","Her pillow — in a NON-white pillowcase","So it doesn't vanish into hospital laundry"],
+  ],
+  "bag-baby":[
+    ["bb-1","Car seat installed IN THE CAR","They won't let you leave without it"],
+    ["bb-2","Going-home outfit in newborn AND 0-3mo sizes","You don't know her size yet"],
+    ["bb-3","2–3 onesies + a light swaddle blanket","The hospital provides most baby supplies — this is extra"],
+    ["bb-4","Hat + scratch mittens",""],
+    ["bb-5","Pediatrician's name + phone number","They'll ask for it at the hospital"],
+    ["bb-6","Blanket for over the car seat buckles — never under","Nothing puffy between baby and harness"],
+  ],
+  "bag-partner":[
+    ["bp-1","2 changes of comfortable clothes","Assume a spill on everything"],
+    ["bp-2","Toiletries + deodorant",""],
+    ["bp-3","Snacks for YOU + a refillable water bottle","You can't coach on an empty stomach"],
+    ["bp-4","Phone charger (long cable) + battery pack",""],
+    ["bp-5","Cash / card for parking and vending machines",""],
+    ["bp-6","Pillow + light blanket","The partner 'bed' is a vinyl couch. Bring comfort"],
+    ["bp-7","Entertainment for the long quiet stretches","Downloaded, not streamed — hospital wifi is bad"],
+    ["bp-8","Swim trunks","In case she labors in the shower or tub and wants you in there"],
+    ["bp-9","The announcement text list",""],
+  ],
+  "hosp-grab":[
+    ["hg-1","Phones + chargers + battery pack",""],
+    ["hg-2","Toiletries bag (the sticky-note items)",""],
+    ["hg-3","Her pillow",""],
+    ["hg-4","Snacks + drinks from the fridge",""],
+    ["hg-5","ID, insurance cards, birth preferences",""],
+    ["hg-6","Car seat clicked into its base",""],
+    ["hg-7","House locked, pets handled, lights off",""],
+  ],
+  "hosp-questions":[
+    ["hq-1","Can routine newborn checks happen on mom's chest?",""],
+    ["hq-2","When can the lactation consultant come by — and again tomorrow?",""],
+    ["hq-3","What's the rooming-in setup? Can baby stay with us the whole time?",""],
+    ["hq-4","Who do we call overnight once we're home? (get the nurse-line number)",""],
+    ["hq-5","When should her first pediatrician visit be — and is it booked?",""],
+    ["hq-6","What bleeding / pain is normal for mom's recovery vs a call-now sign?",""],
+    ["hq-7","How do we do cord care, and when is her first bath?",""],
+    ["hq-8","Was her bilirubin (jaundice) check OK? Does she need a recheck?",""],
+    ["hq-9","Birth certificate + Social Security paperwork — done before discharge?",""],
+    ["hq-10","Can someone double-check our car seat harness fit before we leave?",""],
+  ],
+};
+
+/* ================================================================
+   STATE (localStorage)
+================================================================ */
+var KEY = "babyCC.v1";
+var S;
+try { S = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e){ S = {}; }
+S.checks  = S.checks  || {};   // id -> true
+S.custom  = S.custom  || {};   // listId -> [{id,text}]
+S.ctr     = S.ctr     || [];   // contractions [{start,end}]
+S.ctrLive = S.ctrLive || null; // start ts of in-progress contraction
+S.log     = S.log     || [];   // baby log [{t,type,dur?}]
+S.sleepStart = S.sleepStart || null;
+S.tab     = S.tab     || "before";
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+
+/* ================================================================
+   DOM HELPERS (no innerHTML anywhere — all safe DOM construction)
+================================================================ */
+function $(s){ return document.querySelector(s); }
+function $$(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); }
+function el(tag, cls, text){
+  var n = document.createElement(tag);
+  if(cls) n.className = cls;
+  if(text != null) n.textContent = text;
+  return n;
+}
+function fmtClock(ts){
+  var d = new Date(ts), h = d.getHours(), m = String(d.getMinutes());
+  if(m.length < 2) m = "0" + m;
+  var ap = h >= 12 ? "pm" : "am"; h = h % 12 || 12;
+  return h + ":" + m + ap;
+}
+function fmtDur(s){
+  s = Math.round(s);
+  if(s < 60) return s + "s";
+  var m = Math.floor(s/60), r = String(s%60);
+  if(r.length < 2) r = "0" + r;
+  return m + "m " + r + "s";
+}
+function fmtMins(s){ var m = s/60; return (m >= 10 ? Math.round(m) : Math.round(m*10)/10) + "m"; }
+function dayKey(ts){ var d = new Date(ts); return d.getFullYear()+"-"+d.getMonth()+"-"+d.getDate(); }
+
+/* current pregnancy week from the due date (40-week clock) */
+function pregInfo(){
+  var now = new Date();
+  var msLeft = DUE - now;
+  var daysLeft = Math.max(0, Math.ceil(msLeft / 86400000));
+  var week = Math.min(42, 40 - Math.floor(daysLeft / 7));
+  return { daysLeft: daysLeft, week: week, arrived: msLeft <= 0 };
+}
+
+/* ================================================================
+   COUNTDOWN
+================================================================ */
+function renderCountdown(){
+  var host = $("#countdown");
+  var p = pregInfo();
+  while(host.firstChild) host.removeChild(host.firstChild);
+  if(p.arrived){
+    host.appendChild(el("div","arrived","💜 She's here. Head to the After tab."));
+    return;
+  }
+  var now = new Date();
+  var ms = DUE - now;
+  var d = Math.floor(ms/86400000);
+  var h = Math.floor(ms % 86400000 / 3600000);
+  var wk = Math.floor(d/7), wd = d % 7;
+
+  var row = el("div","countdown");
+  [[d,"days"],[h,"hours"],[p.week,"wks preg"]].forEach(function(pair){
+    var cell = el("div","cd-cell");
+    cell.appendChild(el("div","cd-num", String(pair[0])));
+    cell.appendChild(el("div","cd-lab", pair[1]));
+    row.appendChild(cell);
+  });
+  host.appendChild(row);
+
+  var sub = el("div","cd-sub","Due ");
+  var b = el("strong",null,"Aug 24, 2026");
+  sub.appendChild(b);
+  sub.appendChild(document.createTextNode(" · " + wk + " weeks " + wd + " days to go"));
+  host.appendChild(sub);
+}
+renderCountdown();
+setInterval(renderCountdown, 60000);
+
+/* ================================================================
+   TABS
+================================================================ */
+function setTab(name){
+  S.tab = name; save();
+  $$(".mode").forEach(function(m){ m.classList.toggle("active", m.id === "mode-"+name); });
+  $$(".tab-btn").forEach(function(b){ b.classList.toggle("active", b.dataset.tab === name); });
+  window.scrollTo(0,0);
+}
+$$(".tab-btn").forEach(function(b){ b.addEventListener("click", function(){ setTab(b.dataset.tab); }); });
+
+/* ================================================================
+   CHECKLISTS (built-in + custom, all persistent)
+================================================================ */
+function makeItem(id, text, note, custom){
+  var li = el("li","citem" + (S.checks[id] ? " done" : ""));
+  li.dataset.id = id;
+  var cb = document.createElement("input");
+  cb.type = "checkbox"; cb.className = "cbox"; cb.id = "cb-" + id;
+  cb.checked = !!S.checks[id];
+  var lab = el("label","clabel", text);
+  lab.htmlFor = "cb-" + id;
+  if(note){ lab.appendChild(el("small", null, note)); }
+  li.appendChild(cb); li.appendChild(lab);
+  if(custom){
+    var del = el("button","del","✕");
+    del.setAttribute("aria-label","Delete item");
+    li.appendChild(del);
+  }
+  return li;
+}
+function fillList(ul, listId, builtin){
+  while(ul.firstChild) ul.removeChild(ul.firstChild);
+  (builtin || []).forEach(function(t){ ul.appendChild(makeItem(t[0], t[1], t[2], false)); });
+  (S.custom[listId] || []).forEach(function(c){ ul.appendChild(makeItem(c.id, c.text, "", true)); });
+}
+function renderList(listId){
+  var ul = document.querySelector('[data-list="'+listId+'"]');
+  if(ul) fillList(ul, listId, LISTS[listId]);
+}
+function makeAddRow(listId, placeholder){
+  var row = el("div","addrow");
+  row.dataset.add = listId;
+  var input = document.createElement("input");
+  input.type = "text"; input.placeholder = placeholder;
+  var btn = el("button", null, "Add");
+  row.appendChild(input); row.appendChild(btn);
+  return row;
+}
+function renderWeeks(){
+  var p = pregInfo();
+  var cur = Math.max(30, Math.min(40, p.week));
+  var host = $("#weeks");
+  /* preserve open/closed state across re-renders */
+  var openState = {};
+  $$("#weeks details").forEach(function(d){ openState[d.dataset.week] = d.open; });
+  while(host.firstChild) host.removeChild(host.firstChild);
+
+  WEEKS.forEach(function(wk){
+    var listId = "wk-" + wk.w;
+    var cust = S.custom[listId] || [];
+    var total = wk.tasks.length + cust.length;
+    var done = wk.tasks.filter(function(t){ return S.checks[t[0]]; }).length +
+               cust.filter(function(c){ return S.checks[c.id]; }).length;
+    var isCur = wk.w === cur && !p.arrived;
+    var isPast = wk.w < p.week;
+
+    var det = el("details","week" + (isCur ? " current" : "") + (isPast ? " past" : ""));
+    det.dataset.week = wk.w;
+    det.open = (wk.w in openState) ? openState[wk.w] : isCur;
+
+    var sum = el("summary");
+    var badge = el("div","wk-badge", String(wk.w));
+    badge.appendChild(el("span", null, "week"));
+    var meta = el("div","wk-meta");
+    meta.appendChild(el("div","wk-title", wk.title));
+    meta.appendChild(el("div","wk-sub", done + " of " + total + " done"));
+    sum.appendChild(badge); sum.appendChild(meta);
+    if(isCur) sum.appendChild(el("span","now-chip","Now"));
+    sum.appendChild(el("span","wk-chev","▶"));
+    det.appendChild(sum);
+
+    var body = el("div","wk-body");
+    var ul = el("ul","clist");
+    ul.dataset.list = listId;
+    wk.tasks.forEach(function(t){ ul.appendChild(makeItem(t[0], t[1], t[2], false)); });
+    cust.forEach(function(c){ ul.appendChild(makeItem(c.id, c.text, "", true)); });
+    body.appendChild(ul);
+    body.appendChild(makeAddRow(listId, "Add a week " + wk.w + " task…"));
+    det.appendChild(body);
+    host.appendChild(det);
+  });
+}
+
+/* Today panel: unchecked tasks from past weeks (catch-up) + current week */
+function renderToday(){
+  var p = pregInfo();
+  var cur = Math.max(30, Math.min(40, p.week));
+  $("#today-sub").textContent = p.arrived
+    ? "She's here — the prep track did its job."
+    : "Week " + p.week + " of 40 · the most time-sensitive items, surfaced automatically.";
+  var items = [];
+  WEEKS.forEach(function(wk){
+    if(wk.w > cur) return;
+    wk.tasks.forEach(function(t){
+      if(!S.checks[t[0]]) items.push({id:t[0], text:t[1], w:wk.w, overdue: wk.w < cur});
+    });
+    (S.custom["wk-"+wk.w] || []).forEach(function(c){
+      if(!S.checks[c.id]) items.push({id:c.id, text:c.text, w:wk.w, overdue: wk.w < cur});
+    });
+  });
+  items.sort(function(a,b){ return a.w - b.w; });
+  var top = items.slice(0,6);
+  var ul = $("#today-list");
+  while(ul.firstChild) ul.removeChild(ul.firstChild);
+  top.forEach(function(it){
+    ul.appendChild(makeItem(it.id, it.text,
+      it.overdue ? "From week " + it.w + " — catch up when you can" : "This week", false));
+  });
+  $("#today-empty").hidden = items.length !== 0;
+}
+
+/* progress pills */
+function renderProgress(){
+  [["prog-gobag",["bag-mom","bag-baby","bag-partner"]],
+   ["prog-questions",["hosp-questions"]]].forEach(function(pair){
+    var total = 0, done = 0;
+    pair[1].forEach(function(l){
+      (LISTS[l] || []).forEach(function(t){ total++; if(S.checks[t[0]]) done++; });
+      (S.custom[l] || []).forEach(function(c){ total++; if(S.checks[c.id]) done++; });
+    });
+    var node = document.getElementById(pair[0]);
+    if(node) node.textContent = done + " / " + total;
+  });
+}
+
+function renderAllChecklists(){
+  Object.keys(LISTS).forEach(renderList);
+  renderWeeks();
+  renderToday();
+  renderProgress();
+}
+renderAllChecklists();
+
+/* checklist events (delegated) */
+document.addEventListener("change", function(e){
+  if(!e.target.classList || !e.target.classList.contains("cbox")) return;
+  var li = e.target.closest(".citem");
+  if(!li) return;
+  var id = li.dataset.id;
+  if(e.target.checked) S.checks[id] = true; else delete S.checks[id];
+  save();
+  renderAllChecklists();
+});
+document.addEventListener("click", function(e){
+  /* delete custom item */
+  if(e.target.classList && e.target.classList.contains("del")){
+    var li = e.target.closest(".citem");
+    var id = li.dataset.id;
+    Object.keys(S.custom).forEach(function(l){
+      S.custom[l] = S.custom[l].filter(function(it){ return it.id !== id; });
+    });
+    delete S.checks[id];
+    save(); renderAllChecklists();
+    return;
+  }
+  /* add custom item */
+  var addBtn = e.target.closest ? e.target.closest(".addrow button") : null;
+  if(addBtn){
+    var row = addBtn.closest(".addrow");
+    var listId = row.dataset.add;
+    var input = row.querySelector("input");
+    var text = input.value.trim();
+    if(!text) return;
+    if(!S.custom[listId]) S.custom[listId] = [];
+    S.custom[listId].push({ id: "c" + Date.now().toString(36) + Math.floor(Math.random()*999), text: text });
+    input.value = "";
+    save(); renderAllChecklists();
+  }
+});
+document.addEventListener("keydown", function(e){
+  if(e.key === "Enter" && e.target.matches && e.target.matches(".addrow input")){
+    var btn = e.target.closest(".addrow").querySelector("button");
+    if(btn) btn.click();
+  }
+});
+
+/* ================================================================
+   CONTRACTION TIMER
+================================================================ */
+var ctTick = null;
+function renderCT(){
+  var btn = $("#ct-btn"), time = $("#ct-time"), lab = $("#ct-lab");
+  if(S.ctrLive){
+    btn.classList.add("running");
+    time.textContent = fmtDur((Date.now() - S.ctrLive) / 1000);
+    lab.textContent = "contraction — tap when it ends";
+    if(!ctTick) ctTick = setInterval(renderCT, 1000);
+  } else {
+    btn.classList.remove("running");
+    time.textContent = "Start";
+    lab.textContent = "tap when one begins";
+    if(ctTick){ clearInterval(ctTick); ctTick = null; }
+  }
+  /* stats over the last hour */
+  var hourAgo = Date.now() - 3600000;
+  var recent = S.ctr.filter(function(c){ return c.start >= hourAgo; });
+  $("#ct-count").textContent = String(recent.length);
+  var durs = recent.map(function(c){ return (c.end - c.start)/1000; });
+  var sumD = durs.reduce(function(a,b){ return a+b; }, 0);
+  $("#ct-avg-dur").textContent = durs.length ? fmtDur(sumD/durs.length) : "—";
+  var ints = [];
+  for(var i=1; i<recent.length; i++) ints.push((recent[i].start - recent[i-1].start)/1000);
+  var sumI = ints.reduce(function(a,b){ return a+b; }, 0);
+  $("#ct-avg-int").textContent = ints.length ? fmtMins(sumI/ints.length) : "—";
+
+  /* 5-1-1 readout */
+  var box = $("#ct-511");
+  if(recent.length >= 3 && ints.length >= 2){
+    var avgInt = sumI/ints.length;
+    var avgDur = sumD/durs.length;
+    var spanMin = (recent[recent.length-1].start - recent[0].start)/60000;
+    box.hidden = false;
+    if(avgInt <= 5.5*60 && avgDur >= 55 && spanMin >= 55){
+      box.className = "ct-511 go";
+      box.textContent = "⚠ Pattern matches 5-1-1 — contractions ~5 min apart, ~1 min long, for about an hour. Call your OB now.";
+    } else if(avgInt <= 7*60 && avgDur >= 45){
+      box.className = "ct-511 close";
+      box.textContent = "Getting closer — roughly " + fmtMins(avgInt) + " apart, " + fmtDur(avgDur) + " long. Keep timing; bag by the door.";
+    } else {
+      box.className = "ct-511 calm";
+      box.textContent = "Pattern so far: ~" + fmtMins(avgInt) + " apart, " + fmtDur(avgDur) + " long. Likely early labor — rest, hydrate, keep logging.";
+    }
+  } else box.hidden = true;
+
+  /* log table — latest first */
+  var tbl = $("#ct-table"), rows = $("#ct-rows"), clearBtn = $("#ct-clear");
+  while(rows.firstChild) rows.removeChild(rows.firstChild);
+  if(S.ctr.length){
+    tbl.hidden = false; clearBtn.hidden = false;
+    var slice = S.ctr.slice(-30);
+    var built = slice.map(function(c, i){
+      var prev = slice[i-1];
+      var tr = el("tr");
+      tr.appendChild(el("td", null, fmtClock(c.start)));
+      tr.appendChild(el("td", null, fmtDur((c.end - c.start)/1000)));
+      tr.appendChild(el("td", null, prev ? fmtMins((c.start - prev.start)/1000) : "—"));
+      return tr;
+    });
+    built.reverse().forEach(function(tr){ rows.appendChild(tr); });
+  } else { tbl.hidden = true; clearBtn.hidden = true; }
+}
+$("#ct-btn").addEventListener("click", function(){
+  if(S.ctrLive){
+    var dur = Date.now() - S.ctrLive;
+    if(dur > 3000) S.ctr.push({ start: S.ctrLive, end: Date.now() }); /* ignore accidental taps */
+    S.ctrLive = null;
+  } else {
+    S.ctrLive = Date.now();
+  }
+  save(); renderCT();
+});
+$("#ct-clear").addEventListener("click", function(){
+  if(confirm("Clear the whole contraction log?")){ S.ctr = []; S.ctrLive = null; save(); renderCT(); }
+});
+renderCT();
+
+/* ================================================================
+   BABY LOG (feed / diaper / sleep)
+================================================================ */
+var LOG_LABELS = {
+  "feed-left":   ["🤱","Nursed — left side"],
+  "feed-right":  ["🤱","Nursed — right side"],
+  "feed-bottle": ["🍼","Bottle feed"],
+  "diaper-wet":  ["💧","Wet diaper"],
+  "diaper-dirty":["💩","Dirty diaper"],
+  "sleep-start": ["😴","Fell asleep"],
+  "sleep-end":   ["🌅","Woke up"]
+};
+function renderBabyLog(){
+  var sb = $("#sleep-btn");
+  if(S.sleepStart){
+    sb.classList.add("sleeping");
+    $("#sleep-lab").textContent = "Sleeping… tap to end";
+    $("#sleep-sub").textContent = "since " + fmtClock(S.sleepStart);
+  } else {
+    sb.classList.remove("sleeping");
+    $("#sleep-lab").textContent = "Sleep start";
+    $("#sleep-sub").textContent = "tap when she falls asleep";
+  }
+  var today = dayKey(Date.now());
+  var t = S.log.filter(function(e){ return dayKey(e.t) === today; });
+  $("#sum-feeds").textContent = String(t.filter(function(e){ return e.type.indexOf("feed") === 0; }).length);
+  $("#sum-wet").textContent   = String(t.filter(function(e){ return e.type === "diaper-wet"; }).length);
+  $("#sum-dirty").textContent = String(t.filter(function(e){ return e.type === "diaper-dirty"; }).length);
+  var sleepMs = 0;
+  t.forEach(function(e){ if(e.type === "sleep-end" && e.dur) sleepMs += e.dur; });
+  if(S.sleepStart) sleepMs += Date.now() - S.sleepStart;
+  $("#sum-sleep").textContent = sleepMs ? (Math.round(sleepMs/360000)/10) + "h" : "—";
+
+  var ul = $("#baby-log");
+  while(ul.firstChild) ul.removeChild(ul.firstChild);
+  S.log.slice(-25).reverse().forEach(function(e){
+    var L = LOG_LABELS[e.type] || ["·", e.type];
+    var li = el("li");
+    li.appendChild(el("span","t", fmtClock(e.t)));
+    var what = el("span","what", L[0] + " " + L[1]);
+    if(e.type === "sleep-end" && e.dur){
+      what.appendChild(document.createTextNode(" "));
+      what.appendChild(el("small", null, "(" + fmtDur(e.dur/1000) + ")"));
+    }
+    li.appendChild(what);
+    ul.appendChild(li);
+  });
+  $("#log-clear").hidden = (S.log.length === 0 && !S.sleepStart);
+}
+$$(".logbtn").forEach(function(b){
+  b.addEventListener("click", function(){
+    var type = b.dataset.log;
+    if(type === "sleep"){
+      if(S.sleepStart){
+        S.log.push({ t: Date.now(), type: "sleep-end", dur: Date.now() - S.sleepStart });
+        S.sleepStart = null;
+      } else {
+        S.sleepStart = Date.now();
+        S.log.push({ t: Date.now(), type: "sleep-start" });
+      }
+    } else {
+      S.log.push({ t: Date.now(), type: type });
+    }
+    save(); renderBabyLog();
+  });
+});
+$("#log-clear").addEventListener("click", function(){
+  if(confirm("Clear the entire feeding/diaper/sleep log?")){ S.log = []; S.sleepStart = null; save(); renderBabyLog(); }
+});
+renderBabyLog();
+setInterval(renderBabyLog, 60000);
+
+/* init */
+setTab(S.tab);
+</script>
+</body>
+</html>
