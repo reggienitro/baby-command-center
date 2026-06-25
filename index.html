@@ -1267,6 +1267,15 @@ $("#log-clear").addEventListener("click", function(){
 renderBabyLog();
 setInterval(renderBabyLog, 60000);
 
+/* ================================================================
+   SERVICE WORKER — offline support (works after first online load)
+================================================================ */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  });
+}
+
 /* init */
 setTab(S.tab);
 </script>
